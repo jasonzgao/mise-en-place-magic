@@ -4,7 +4,8 @@
   "name": "Mise-en-place Magic",
   "version": "1.0",
   "description": "Transform recipe websites into clean, organized cooking instructions with optimized mise-en-place guides.",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "index.html",
     "default_icon": {
