@@ -1,73 +1,139 @@
-# Welcome to your Lovable project
+# Mise en Place Magic
 
-## Project info
+A Chrome extension that simplifies recipe webpages into a clean, minimalist canvas with intelligent mise-en-place instructions powered by OpenAI.
 
-**URL**: https://lovable.dev/projects/e84a8dd1-72f8-4296-9171-8bf65b3fbd86
+## Features
 
-## How can I edit this code?
+- **Automatic Recipe Detection**: The extension automatically detects when you're browsing a recipe webpage.
+- **Clean Canvas Overlay**: Transform cluttered recipe pages into a clean, distraction-free canvas with one click.
+- **Intelligent Mise-en-Place**: AI-generated guidance for efficient ingredient preparation, minimizing the number of prep bowls needed.
+- **Simplified Recipe View**: See all important recipe information in one organized view without scrolling through walls of text.
 
-There are several ways of editing your application.
+## Installation
 
-**Use Lovable**
+### Development Mode
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e84a8dd1-72f8-4296-9171-8bf65b3fbd86) and start prompting.
+1. Clone this repository:
+   ```
+   git clone https://github.com/yourusername/mise-en-place-magic.git
+   ```
 
-Changes made via Lovable will be committed automatically to this repo.
+2. Generate icons from the SVG (requires ImageMagick):
+   ```
+   cd mise-en-place-magic
+   node scripts/generate-icons.js
+   ```
 
-**Use your preferred IDE**
+3. Set up the backend:
+   ```
+   cd backend
+   npm install
+   cp .env.example .env
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+4. Edit the `.env` file to add your OpenAI API key.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+5. Start the backend:
+   ```
+   npm start
+   ```
 
-Follow these steps:
+6. Load the extension in Chrome:
+   - Open Chrome and navigate to `chrome://extensions/`
+   - Enable "Developer mode" by toggling the switch in the top right corner
+   - Click "Load unpacked" and select the root directory of this project
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+7. The extension should now be installed and visible in your Chrome toolbar
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Production Deployment
 
-# Step 3: Install the necessary dependencies.
-npm i
+For a production-ready deployment:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+1. **Deploy the Backend Service**:
+   - Choose a hosting provider like Vercel, Render, Heroku, or AWS
+   - Set the necessary environment variables including your OpenAI API key
+   - Deploy the backend service from the `backend` directory
 
-**Edit a file directly in GitHub**
+2. **Update the Backend URL**:
+   - In `src/js/content.js`, update the `backendUrl` variable with your deployed backend URL
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. **Generate a production build**:
+   - Ensure all icons are generated using the script
+   - Package the extension for the Chrome Web Store
 
-**Use GitHub Codespaces**
+4. **Publish to Chrome Web Store**:
+   - Create a developer account at [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole/)
+   - Follow their submission process to publish your extension
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Usage
 
-## What technologies are used for this project?
+1. Navigate to any recipe webpage
+2. If the extension detects recipe content, the Mise en Place Magic icon will become active
+3. Click the icon in your Chrome toolbar
+4. Click the "Simplify Recipe" button in the popup
+5. A clean canvas will slide in from the right with the simplified recipe and mise-en-place instructions
+6. Use the "×" button or press Escape to close the canvas
 
-This project is built with .
+## OpenAI API Setup
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Creating an API Key
 
-## How can I deploy this project?
+1. Create an account at [OpenAI](https://platform.openai.com/)
+2. Navigate to the [API Keys section](https://platform.openai.com/account/api-keys)
+3. Click "Create new secret key"
+4. Copy the generated key (you won't be able to see it again)
+5. Add this key to your `.env` file in the backend directory
 
-Simply open [Lovable](https://lovable.dev/projects/e84a8dd1-72f8-4296-9171-8bf65b3fbd86) and click on Share -> Publish.
+### Managing API Costs
 
-## Can I connect a custom domain to my Lovable project?
+The extension uses GPT-4 by default, which provides the best mise-en-place instructions but costs more. To reduce costs:
 
-Yes it is!
+1. In `backend/src/server.js`, change the model from "gpt-4" to "gpt-3.5-turbo"
+2. Implement caching to avoid repeated API calls for the same recipe
+3. Consider implementing usage limits in your backend
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## How It Works
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+1. **Recipe Detection**: The extension uses pattern matching and DOM analysis to detect recipe content.
+2. **Data Extraction**: When a recipe is detected, it extracts title, times, ingredients, and instructions.
+3. **AI Processing**: The data is sent to the backend, which uses OpenAI to generate mise-en-place instructions.
+4. **Display**: Results are shown in a clean canvas overlay.
+
+## Security Considerations
+
+- API keys are stored only on the backend server, never in the extension code
+- CORS protection limits which origins can access your backend
+- Rate limiting prevents abuse
+- Input validation guards against malicious inputs
+
+## Backend Architecture
+
+The backend is built with Express.js and includes:
+
+- CORS protection
+- Rate limiting
+- Input validation
+- Error handling
+- Retry mechanism for API calls
+
+## Customizing
+
+### Styling
+
+Modify `src/css/content.css` to change the appearance of the recipe canvas.
+
+### Recipe Detection
+
+Update the selectors in `src/js/content.js` to improve recipe detection for specific sites.
+
+### OpenAI Prompt
+
+Modify the prompt in `backend/src/server.js` to customize the mise-en-place instructions.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT License - see the LICENSE file for details. 

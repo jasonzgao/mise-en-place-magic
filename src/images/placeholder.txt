@@ -1,0 +1,9 @@
+Please replace these placeholder icons with actual icons:
+
+1. icon16.png - 16x16 pixels
+2. icon48.png - 48x48 pixels
+3. icon128.png - 128x128 pixels
+
+You can create simple icons using a graphic design tool or convert a free SVG to PNG at the required sizes.
+
+Suggested design: A minimalist bowl or chef's hat with a green color theme, representing mise-en-place. 
