@@ -54,10 +54,6 @@ const selectors = {
   ]
 };
 
-// Cache for mise-en-place instructions
-let cachedMiseEnPlaceInstructions = null;
-let lastRecipeData = null;
-
 // Helper function to try multiple selectors until one works
 function findElement(selectors) {
   for (const selector of selectors) {
@@ -159,46 +155,11 @@ function extractRecipeData() {
 
 // Generate mise-en-place instructions using the OpenAI API via background script
 function generateMiseEnPlace(recipeData) {
-  // If we already have cached instructions for this recipe, return them
-  if (cachedMiseEnPlaceInstructions && lastRecipeData && 
-      JSON.stringify(lastRecipeData) === JSON.stringify(recipeData)) {
-    console.log('Using cached mise-en-place instructions');
-    return Promise.resolve(cachedMiseEnPlaceInstructions);
-  }
+  // Get the current URL as the cache key
+  const url = window.location.href;
   
-  return new Promise((resolve, reject) => {
-    try {
-      console.log('Sending recipe data to background script for processing');
-      
-      // Send data to background script instead of making direct API call
-      chrome.runtime.sendMessage(
-        { 
-          action: "generateMiseEnPlace", 
-          data: recipeData 
-        },
-        (response) => {
-          // Check for any error in the messaging system
-          if (chrome.runtime.lastError) {
-            console.error("Error sending message to background script:", chrome.runtime.lastError);
-            return reject(chrome.runtime.lastError);
-          }
-          
-          if (response && response.success) {
-            // Cache the instructions for future use
-            cachedMiseEnPlaceInstructions = response.miseEnPlaceInstructions;
-            lastRecipeData = {...recipeData};
-            resolve(response.miseEnPlaceInstructions);
-          } else {
-            console.error("Error from background script:", response ? response.error : "Unknown error");
-            reject(new Error(response ? response.error : "Failed to generate mise-en-place instructions"));
-          }
-        }
-      );
-    } catch (error) {
-      console.error("Error in content script when requesting mise-en-place:", error);
-      reject(error);
-    }
-  }).catch(error => {
+  // Use the storage manager to get recipe content
+  return window.recipeStorage.getRecipeAIContent(url, recipeData).catch(error => {
     console.error("Promise rejected in generateMiseEnPlace:", error);
     
     // Return a friendly error message for the user
@@ -354,8 +315,19 @@ function createFloatingButton() {
   });
 }
 
-// Check if we're on a recipe page and add floating button when page loads
-window.addEventListener('load', createFloatingButton);
+// Initialize the storage cache on load
+window.addEventListener('load', () => {
+  // Wait for storage manager to be available
+  if (window.recipeStorage) {
+    window.recipeStorage.loadCache().then(() => {
+      console.log('Recipe cache initialized');
+      createFloatingButton();
+    });
+  } else {
+    // If storage manager isn't loaded yet, just create the button
+    createFloatingButton();
+  }
+});
 
 // Also check when DOM changes, as some sites load content dynamically
 const observer = new MutationObserver((mutations) => {
@@ -371,7 +343,7 @@ observer.observe(document.documentElement, {
   subtree: true
 });
 
-// Handle page visibility changes (e.g., when the tab becomes active again)
+// Handle page visibility changes (e.g., when the tab becomes visible again)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     // Make sure our button is present when the page becomes visible again
@@ -382,5 +354,4 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // For debugging/testing only
-console.log("Mise en Place Magic content script loaded");
-console.log('OpenAI API Key:', process.env.OPENAI_API_KEY); 
+console.log("Mise en Place Magic content script loaded"); 
