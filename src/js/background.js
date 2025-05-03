@@ -165,6 +165,7 @@ async function handleMiseEnPlaceRequest(recipeData, sendResponse) {
     // Send the response back to the content script
     sendResponse({ 
       success: true, 
+      equipmentList: data.equipmentList,
       miseEnPlaceInstructions: data.miseEnPlaceInstructions 
     });
   } catch (error) {

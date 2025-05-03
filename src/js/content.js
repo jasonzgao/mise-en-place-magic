@@ -159,25 +159,35 @@ function generateMiseEnPlace(recipeData) {
   const url = window.location.href;
   
   // Use the storage manager to get recipe content
-  return window.recipeStorage.getRecipeAIContent(url, recipeData).catch(error => {
-    console.error("Promise rejected in generateMiseEnPlace:", error);
-    
-    // Return a friendly error message for the user
-    return `
-      MISE-EN-PLACE INSTRUCTIONS:
+  return window.recipeStorage.getRecipeAIContent(url, recipeData)
+    .then(response => {
+      // Log the response for debugging
+      console.log("Equipment List:", response.equipmentList);
+      console.log("Mise-en-Place Instructions:", response.miseEnPlaceInstructions);
+      return response;
+    })
+    .catch(error => {
+      console.error("Promise rejected in generateMiseEnPlace:", error);
       
-      Sorry, we couldn't generate custom mise-en-place instructions at this time.
-      Here are some general tips:
-      
-      1. Read through the entire recipe first.
-      2. Gather and measure all ingredients.
-      3. Prep ingredients that require cutting, chopping, or other preparation.
-      4. Group ingredients that will be added together.
-      5. Arrange in order of use.
-      
-      Please try again later.
-    `;
-  });
+      // Return a friendly error message for the user
+      return {
+        equipmentList: `
+          • Mixing bowls
+          • Measuring cups and spoons
+          • Knife and cutting board
+          • Basic cookware for the recipe
+        `,
+        miseEnPlaceInstructions: `
+          1. Read through the entire recipe first.
+          2. Gather and measure all ingredients.
+          3. Prep ingredients that require cutting, chopping, or other preparation.
+          4. Group ingredients that will be added together.
+          5. Arrange in order of use.
+          
+          Please try again later for customized instructions.
+        `
+      };
+    });
 }
 
 // Create and show the canvas overlay
@@ -195,15 +205,28 @@ async function showRecipeCanvas(recipeData) {
     <div class="recipe-canvas-content">
       <div class="recipe-canvas-header">
         <h1>${recipeData.title || 'Recipe'}</h1>
-        <div class="recipe-times">${recipeData.times || ''}</div>
         <button id="close-recipe-canvas" class="close-button">×</button>
       </div>
       
       <div class="recipe-canvas-body">
-        <div class="recipe-section">
+        <div class="recipe-section ingredients-section">
           <h2>Ingredients</h2>
           <ul class="ingredients-list">
-            ${recipeData.ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}
+            ${recipeData.ingredients.map(ingredient => 
+              `<li><label><input type="checkbox"> ${ingredient}</label></li>`
+            ).join('')}
+          </ul>
+        </div>
+        
+        <div class="recipe-section equipment-section">
+          <h2>Equipment</h2>
+          <ul class="equipment-list">
+            <li class="loading-item">
+              <div class="loading-indicator">
+                <div class="spinner"></div>
+                <p>Loading equipment list...</p>
+              </div>
+            </li>
           </ul>
         </div>
         
@@ -252,13 +275,36 @@ async function showRecipeCanvas(recipeData) {
   
   try {
     // Generate mise-en-place instructions
-    const miseEnPlace = await generateMiseEnPlace(recipeData);
+    const response = await generateMiseEnPlace(recipeData);
+    
+    // Update the equipment list section
+    const equipmentListElement = overlay.querySelector('.equipment-list');
+    if (response.equipmentList) {
+      // Parse the equipment list (assuming bullet points format)
+      const equipmentItems = response.equipmentList
+        .split('•')
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+      
+      equipmentListElement.innerHTML = equipmentItems
+        .map(item => `<li><label><input type="checkbox"> ${item}</label></li>`)
+        .join('');
+    } else {
+      equipmentListElement.innerHTML = '<li>No equipment information available</li>';
+    }
     
     // Update the mise-en-place section with the generated content
     const miseEnPlaceElement = overlay.querySelector('.mise-en-place-text');
-    miseEnPlaceElement.innerHTML = miseEnPlace;
+    if (response.miseEnPlaceInstructions) {
+      miseEnPlaceElement.innerHTML = response.miseEnPlaceInstructions;
+    } else {
+      miseEnPlaceElement.innerHTML = 'No mise-en-place instructions available';
+    }
   } catch (error) {
     console.error('Error updating mise-en-place content:', error);
+    const equipmentListElement = overlay.querySelector('.equipment-list');
+    equipmentListElement.innerHTML = '<li>Could not load equipment list</li>';
+    
     const miseEnPlaceElement = overlay.querySelector('.mise-en-place-text');
     miseEnPlaceElement.innerHTML = `
       <div class="error-message">

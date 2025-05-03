@@ -169,9 +169,15 @@ function getRecipeAIContent(url, recipeData) {
             }
             
             if (response && response.success) {
+              // Create structured response with both parts
+              const contentObj = {
+                equipmentList: response.equipmentList,
+                miseEnPlaceInstructions: response.miseEnPlaceInstructions
+              };
+              
               // Cache the new content before returning
-              addToCacheWithLRU(url, response.miseEnPlaceInstructions);
-              resolve(response.miseEnPlaceInstructions);
+              addToCacheWithLRU(url, contentObj);
+              resolve(contentObj);
             } else {
               reject(new Error(response ? response.error : "Failed to generate mise-en-place instructions"));
             }
