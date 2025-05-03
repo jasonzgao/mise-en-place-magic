@@ -224,6 +224,13 @@ async function showRecipeCanvas(recipeData) {
   if (!overlay) {
     overlay = document.createElement('div');
     overlay.id = 'recipe-canvas-overlay';
+    
+    // Add Google Fonts for dynamically added content
+    const fontLink = document.createElement('link');
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Syne:wght@700&family=IBM+Plex+Mono:wght@700&family=DM+Sans:wght@400&display=swap';
+    document.head.appendChild(fontLink);
+    
     document.body.appendChild(overlay);
   }
   
@@ -372,7 +379,7 @@ function createFloatingButton() {
       
       // Add the chef hat icon
       const img = document.createElement('img');
-      img.src = chrome.runtime.getURL('src/images/icon128.png');
+      img.src = chrome.runtime.getURL('src/images/icon.svg');
       img.alt = 'Chef Hat';
       button.appendChild(img);
       
