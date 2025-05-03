@@ -65,6 +65,32 @@ function findElement(selectors) {
   return null;
 }
 
+// Helper function to get clean text from an ingredient element
+function getCleanIngredientText(element) {
+  // Clone the element to avoid modifying the original DOM
+  const clone = element.cloneNode(true);
+  
+  // Remove any existing checkbox elements
+  const checkboxes = clone.querySelectorAll('input[type="checkbox"], .wprm-checkbox-container, .wprm-checkbox, .checkbox, [class*="checkbox"]');
+  checkboxes.forEach(checkbox => checkbox.remove());
+
+  // Also remove any labels that might be associated with checkboxes
+  const labels = clone.querySelectorAll('label[for*="checkbox"], .wprm-checkbox-label, [class*="checkbox-label"]');
+  labels.forEach(label => label.remove());
+
+  // Remove any empty spans or divs that might be left after removing checkboxes
+  const emptyElements = clone.querySelectorAll('span:empty, div:empty');
+  emptyElements.forEach(el => el.remove());
+
+  // Get the clean text
+  let text = clone.textContent.trim();
+  
+  // Normalize whitespace
+  text = text.replace(/\s+/g, ' ');
+  
+  return text;
+}
+
 // Extract recipe data from the page
 function extractRecipeData() {
   const recipeData = {
@@ -101,14 +127,15 @@ function extractRecipeData() {
       const items = container.querySelectorAll('li, p, div[class*="ingredient-item"]');
       if (items && items.length > 0) {
         items.forEach(item => {
-          const text = item.textContent.trim();
+          // Get clean text without checkboxes and other noise
+          const text = getCleanIngredientText(item);
           if (text && !recipeData.ingredients.includes(text)) {
             recipeData.ingredients.push(text);
           }
         });
       } else {
         // If no list items found, use the container text
-        const text = container.textContent.trim();
+        const text = getCleanIngredientText(container);
         if (text) {
           // Split by newlines or other common separators
           const lines = text.split(/\r?\n|•/).filter(line => line.trim().length > 0);
