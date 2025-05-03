@@ -89,37 +89,62 @@ const validateRecipeInput = (req, res, next) => {
   
   next();
 };
-
 // Route for generating mise-en-place instructions
 app.post('/api/mise-en-place', validateRecipeInput, async (req, res) => {
   try {
     const { title, times, ingredients, instructions } = req.body;
     
-    // Log the request (in production you would use a proper logging service)
+    // Log the request
     console.log(`Processing recipe request: ${title}`);
     
-    // Create prompt for OpenAI
-    const prompt = `
-      I need help with mise-en-place instructions for this recipe:
-      
-      Title: ${title || 'Untitled Recipe'}
-      ${times ? `Times: ${times}` : ''}
-      
-      Ingredients:
-      ${ingredients.join('\n')}
-      
-      Instructions:
-      ${instructions.join('\n')}
-      
-      Please provide a step-by-step mise-en-place guide that:
-      1. Minimizes the number of prep bowls needed
-      2. Groups ingredients that will be added together
-      3. Specifies which ingredients need to be chopped, minced, etc.
-      4. Provides the most efficient prep order
-      5. Considers timing to maximize efficiency
-      
-      Format your response as a clear, numbered list of mise-en-place steps with groups of ingredients.
-    `;
+    // Enhanced system prompt with clear output format requirements
+    const systemPrompt = `You are a professional chef specializing in kitchen organization and efficiency. 
+    Your task is to analyze recipes and provide two specific outputs:
+    1. A complete list of ALL equipment needed to prepare and cook the recipe
+    2. Precise mise-en-place instructions for efficient preparation. Additionally, the user should be able to seamlessly begin the first step in the provided instructions after finishing all of your generated mise-en-place instructions.
+
+    Always structure your response in this exact format:
+    ---EQUIPMENT---
+    • [First piece of equipment]
+    • [Second piece of equipment]
+    • [Continue with all equipment needed]
+
+    ---MISE-EN-PLACE---
+    1. [First preparation step]
+    2. [Second preparation step]
+    3. [Continue with all preparation steps]
+
+    Ensure every cooking vessel, tool, and utensil is included in the equipment list. Be comprehensive and specific (e.g., "small saucepan" instead of just "pan"). 
+    Ensure every step in the mise-en-place instructions is comprehensive. Assume that the user is a beginner cook and explain exactly which container or bowl prepped ingredients go into.`;
+    
+    // Enhanced user prompt with more specific requirements
+    const userPrompt = `
+    Please analyze this recipe and provide both the equipment list and mise-en-place instructions:
+    
+    Title: ${title || 'Untitled Recipe'}
+    ${times ? `Times: ${times}` : ''}
+    
+    Ingredients:
+    ${ingredients.join('\n')}
+    
+    Instructions:
+    ${instructions.join('\n')}
+    
+    For the equipment list:
+    - Include ALL cooking vessels (pots, pans, baking sheets, etc.)
+    - Include ALL utensils (spoons, whisks, spatulas, etc.)
+    - Include ALL preparation tools (cutting boards, knives, graters, etc.)
+    - Include ALL serving and measuring items (bowls, measuring cups, thermometers, etc.)
+    - Be specific with sizes and types when the recipe indicates or implies them 
+    
+    For the mise-en-place instructions:
+    1. Group ingredients into the same bowl/container if they'll be added together
+    2. Specify prep work (chopping, mincing, measuring) for each ingredient
+    3. Optimize to minimize the number of prep bowls
+    4. List steps in the most efficient preparation order
+    5. Consider timing to maximize efficiency.
+    
+    Remember to format your response with ---EQUIPMENT--- and ---MISE-EN-PLACE--- sections.`;
     
     // Call OpenAI API with retry mechanism
     let attempt = 0;
@@ -129,13 +154,13 @@ app.post('/api/mise-en-place', validateRecipeInput, async (req, res) => {
     while (attempt < maxAttempts) {
       try {
         completion = await openai.chat.completions.create({
-          model: "gpt-4",
+          model: "gpt-4.1-mini",
           messages: [
-            { role: "system", content: "You are a professional chef specializing in mise-en-place organization." },
-            { role: "user", content: prompt }
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
           ],
-          max_tokens: 1000,
-          temperature: 0.7,
+          max_tokens: 2000, // Increased to accommodate both lists
+          temperature: 0.5, // Reduced for more consistent, precise output
         });
         break; // Success, exit the loop
       } catch (error) {
@@ -155,13 +180,20 @@ app.post('/api/mise-en-place', validateRecipeInput, async (req, res) => {
       throw new Error('Failed to get completion from OpenAI after multiple attempts');
     }
     
-    // Extract and send response
-    const miseEnPlaceInstructions = completion.choices[0].message.content;
+    // Extract and parse response
+    const responseContent = completion.choices[0].message.content;
     
-    // Cache the result (in a production app you would use Redis or another caching solution)
-    // This is just a placeholder for the concept
+    // Parse the response to separate equipment list and mise-en-place instructions
+    const equipmentMatch = responseContent.match(/---EQUIPMENT---([\s\S]*?)(?=---MISE-EN-PLACE---|$)/);
+    const miseMatch = responseContent.match(/---MISE-EN-PLACE---([\s\S]*?)(?=$)/);
     
-    res.json({ miseEnPlaceInstructions });
+    const equipmentList = equipmentMatch ? equipmentMatch[1].trim() : '';
+    const miseEnPlaceInstructions = miseMatch ? miseMatch[1].trim() : '';
+    
+    res.json({ 
+      equipmentList,
+      miseEnPlaceInstructions 
+    });
   } catch (error) {
     console.error('Error calling OpenAI API:', error);
     

@@ -2,21 +2,21 @@
 #recipe-canvas-overlay {
   position: fixed;
   top: 0;
-  right: 0;
-  width: 0;
+  right: -800px; /* Start off-screen */
+  width: 90%;
+  max-width: 800px;
   height: 100vh;
   background-color: #fff;
   box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
   overflow-y: auto;
   z-index: 9999;
-  transition: width 0.3s ease-in-out;
+  transition: right 0.3s ease-in-out;
   font-family: 'Helvetica Neue', Arial, sans-serif;
   color: #333;
 }
 
 #recipe-canvas-overlay.visible {
-  width: 90%;
-  max-width: 800px;
+  right: 0;
 }
 
 .recipe-canvas-content {
@@ -196,9 +196,15 @@
     right: 15px;
   }
   
-  #recipe-canvas-overlay.visible {
+  #recipe-canvas-overlay {
     width: 100%;
     max-width: none;
+    right: -100%;
+  }
+  
+  #recipe-canvas-overlay.visible {
+    right: 0;
+    width: 100%;
   }
   
   .recipe-canvas-content {
